@@ -80,3 +80,16 @@ nfe:
     # evita esperar ate a proxima hora cheia apos um deploy/restart. Continua respeitando o
     # intervalo-minimo-minutos acima, entao reinicios frequentes nao geram consultas excessivas.
     executar-no-startup: ${NFE_IMPORT_EXECUTAR_NO_STARTUP:true}
+
+# --- Integracao com o mercadinho: encaminha o XML de cada NF-e importada via POST multipart ---
+# (equivalente a "curl -F file=@nfe.xml;type=application/xml"). Token/URL reais ficam no .env.
+mercadinho:
+  api: ${MERCADINHO_API}
+  token: ${MERCADINHO_TOKEN}
+  # Caminho do endpoint de importacao, relativo a "api" acima.
+  caminho-importacao: ${MERCADINHO_CAMINHO_IMPORTACAO:/api/notas-fiscais/importar/xml}
+  timeout-segundos: ${MERCADINHO_TIMEOUT_SEGUNDOS:30}
+  # Se true, cada nota nova importada da SEFAZ e automaticamente encaminhada ao mercadinho logo
+  # em seguida. Falha no envio NAO desfaz a importacao - a nota fica marcada como pendente
+  # (enviado_mercadinho=false) e pode ser reenviada depois via POST /mercadinho/sincronizar.
+  enviar-apos-importar: ${MERCADINHO_ENVIAR_APOS_IMPORTAR:true}

@@ -1,6 +1,8 @@
 package com.vitainformatica.nfeimporter.service;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.vitainformatica.nfeimporter.config.NfeConfig;
 import com.vitainformatica.nfeimporter.domain.ControleDistribuicao;
@@ -27,21 +29,36 @@ public class NfeImportPersistenceService {
     @Inject
     NfeConfig config;
 
+    /**
+     * @param notasNovas          total de documentos novos persistidos nesta pagina (resumos, NF-e
+     *                             completas e eventos)
+     * @param idsElegiveisMercadinho ids das notas novas que sao NF-e completas (unico tipo que carrega
+     *                             os itens/valores necessarios para o mercadinho) - candidatas a
+     *                             encaminhamento automatico
+     */
+    public record ResultadoPagina(int notasNovas, List<Long> idsElegiveisMercadinho) {
+    }
+
     @Transactional
     public ControleDistribuicao obterControle() {
         return ControleDistribuicao.obterOuCriar(config.cnpj(), config.ambiente());
     }
 
-    /** Persiste os documentos de uma pagina de resposta e atualiza o cursor de NSU. Retorna quantas notas eram novas. */
+    /** Persiste os documentos de uma pagina de resposta e atualiza o cursor de NSU. */
     @Transactional
-    public int persistirPagina(Long controleId, DistDfeResponse resposta) {
+    public ResultadoPagina persistirPagina(Long controleId, DistDfeResponse resposta) {
         ControleDistribuicao controle = ControleDistribuicao.findById(controleId);
 
         int novas = 0;
+        List<Long> idsElegiveisMercadinho = new ArrayList<>();
         if (resposta.sucessoComDocumentos()) {
             for (DistDfeDocumento documento : resposta.documentos()) {
-                if (persistirDocumentoSeNovo(documento)) {
+                ResultadoDocumento resultado = persistirDocumentoSeNovo(documento);
+                if (resultado.persistido()) {
                     novas++;
+                    if (resultado.elegivelMercadinho()) {
+                        idsElegiveisMercadinho.add(resultado.id());
+                    }
                 }
             }
         }
@@ -51,13 +68,17 @@ public class NfeImportPersistenceService {
         controle.ultimoCstat = resposta.cStat();
         controle.ultimoXmotivo = resposta.xMotivo();
 
-        return novas;
+        return new ResultadoPagina(novas, idsElegiveisMercadinho);
     }
 
-    private boolean persistirDocumentoSeNovo(DistDfeDocumento documento) {
+    private record ResultadoDocumento(boolean persistido, Long id, boolean elegivelMercadinho) {
+        static final ResultadoDocumento JA_EXISTIA = new ResultadoDocumento(false, null, false);
+    }
+
+    private ResultadoDocumento persistirDocumentoSeNovo(DistDfeDocumento documento) {
         if (NotaFiscal.existePorNsu(documento.nsu())) {
             // Idempotencia: NSU ja importado em execucao anterior (ex: reprocessamento apos falha parcial).
-            return false;
+            return ResultadoDocumento.JA_EXISTIA;
         }
 
         TipoDocumento tipo = TipoDocumento.porSchema(documento.schema());
@@ -87,6 +108,9 @@ public class NfeImportPersistenceService {
         nota.xml = documento.xml();
         nota.dataImportacao = Instant.now();
         nota.persist();
-        return true;
+
+        // Resumos (resNFe) e eventos nao carregam itens/valores da nota - nao ha o que encaminhar
+        // ao mercadinho ainda. Apenas a NF-e completa (procNFe) tem o XML que o mercadinho espera.
+        return new ResultadoDocumento(true, nota.id, tipo == TipoDocumento.NFE_COMPLETA);
     }
 }

@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import io.quarkus.panache.common.Sort;
 import jakarta.persistence.Column;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
@@ -78,6 +80,17 @@ public class NotaFiscal extends PanacheEntityBase {
     @Column(name = "data_importacao", nullable = false)
     public Instant dataImportacao;
 
+    /** Indica se o XML desta nota ja foi encaminhado com sucesso ao mercadinho. */
+    @Column(name = "enviado_mercadinho", nullable = false)
+    public boolean enviadoMercadinho = false;
+
+    @Column(name = "data_envio_mercadinho")
+    public Instant dataEnvioMercadinho;
+
+    /** Mensagem da ultima falha ao tentar enviar ao mercadinho (null se nunca falhou ou ja foi enviada). */
+    @Column(name = "erro_envio_mercadinho", length = 500)
+    public String erroEnvioMercadinho;
+
     public static NotaFiscal porChaveAcesso(String chaveAcesso) {
         return find("chaveAcesso", chaveAcesso).firstResult();
     }
@@ -90,5 +103,18 @@ public class NotaFiscal extends PanacheEntityBase {
         return findAll(io.quarkus.panache.common.Sort.by("dataEmissao").descending())
                 .page(pagina, tamanhoPagina)
                 .list();
+    }
+
+    /**
+     * Notas ainda nao confirmadas como entregues ao mercadinho. Restrita a NF-e completas: resumos
+     * (resNFe) e eventos nao carregam itens/valores, entao nao ha o que enviar para elas ainda.
+     */
+    public static List<Long> listarIdsPendentesDeEnvioMercadinho(int limite) {
+        // Atribuido a uma variavel tipada explicitamente (em vez de encadear direto) porque o
+        // javac nao consegue inferir T=NotaFiscal no find(...) generico quando o resultado e
+        // encadeado ate um .map(lambda) sem um alvo de tipo explicito no meio do caminho.
+        PanacheQuery<NotaFiscal> query = find("enviadoMercadinho = false and tipoDocumento = ?1",
+                Sort.by("dataEmissao"), TipoDocumento.NFE_COMPLETA);
+        return query.page(0, limite).stream().map(n -> n.id).toList();
     }
 }
