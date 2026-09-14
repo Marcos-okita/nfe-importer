@@ -1,0 +1,82 @@
+quarkus:
+  application:
+    name: nfe-importer
+
+  # --- Banco de dados (MariaDB) ---
+  # Valores reais (host, credenciais) ficam no .env (nao versionado) - veja .env.example.
+  datasource:
+    db-kind: mariadb
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    jdbc:
+      url: ${DB_URL}
+  hibernate-orm:
+    database:
+      generation: none # o schema e controlado pelo Flyway (src/main/resources/db/migration)
+    log:
+      sql: false
+
+  flyway:
+    migrate-at-start: true
+    baseline-on-migrate: true
+
+  # Em dev, sobe uma instancia MariaDB automaticamente via Dev Services (requer Docker).
+  # Comente o bloco acima de datasource.jdbc.url em modo dev se quiser usar o container efemero.
+
+"%dev":
+  quarkus:
+    datasource:
+      devservices:
+        image-name: mariadb:11
+    log:
+      category:
+        "com.vitainformatica.nfeimporter":
+          level: DEBUG
+
+"%test":
+  quarkus:
+    datasource:
+      devservices:
+        image-name: mariadb:11
+
+# --- Configuracao especifica da integracao com a SEFAZ (NFe Distribuicao de DFe) ---
+# CNPJ, UF, ambiente e dados do certificado sao especificos de cada implantacao/maquina - os
+# valores reais ficam no .env (nao versionado), veja .env.example.
+nfe:
+  # CNPJ (somente numeros) do destinatario cujas notas serao importadas - o mesmo CNPJ titular do certificado digital.
+  cnpj: ${NFE_CNPJ}
+
+  # Sigla da UF do CNPJ acima (usada para calcular o codigo IBGE exigido no pedido - cUFAutor).
+  uf: ${NFE_UF}
+
+  # producao ou homologacao
+  ambiente: ${NFE_AMBIENTE:homologacao}
+
+  certificado:
+    # Caminho para o arquivo .pfx/.p12 do certificado e-CNPJ (A1).
+    caminho: ${NFE_CERT_PATH}
+    senha: ${NFE_CERT_PASSWORD}
+
+  distribuicao:
+    # Endpoints do Ambiente Nacional (AN). ATENCAO: uma minoria de UFs usa o ambiente SVRS para este
+    # servico ao inves do AN - confirme o endpoint correto para a UF do certificado no "Manual de
+    # Orientacao do Contribuinte - NF-e Distribuicao de DFe" antes de operar em producao.
+    endpoint-producao: ${NFE_DISTRIBUICAO_URL_PROD:https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx}
+    endpoint-homologacao: ${NFE_DISTRIBUICAO_URL_HOM:https://hom1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx}
+    # Timeout da chamada HTTP/SOAP.
+    timeout-segundos: 30
+
+  import:
+    # Expressao cron (formato Quarkus/quartz com segundos) de execucao automatica do job de importacao.
+    # Padrao: uma vez por hora, aos 5 minutos. A SEFAZ recomenda NAO consultar mais que 1x por hora por CNPJ
+    # (excesso de chamadas gera cStat 656 - Consumo Indevido e bloqueio temporario).
+    cron: ${NFE_IMPORT_CRON:0 5 * * * ?}
+    # Intervalo minimo (minutos) entre consultas ao webservice, mesmo se disparado manualmente via REST.
+    intervalo-minimo-minutos: ${NFE_IMPORT_INTERVALO_MINIMO_MINUTOS:60}
+    # Numero maximo de paginas (chamadas consecutivas paginando por NSU) por execucao, para nao prender
+    # o job indefinidamente ao importar um backlog grande na primeira execucao.
+    max-paginas-por-execucao: ${NFE_IMPORT_MAX_PAGINAS:1}
+    # Se true, executa uma importacao assim que a aplicacao sobe (alem do agendamento periodico) -
+    # evita esperar ate a proxima hora cheia apos um deploy/restart. Continua respeitando o
+    # intervalo-minimo-minutos acima, entao reinicios frequentes nao geram consultas excessivas.
+    executar-no-startup: ${NFE_IMPORT_EXECUTAR_NO_STARTUP:true}
