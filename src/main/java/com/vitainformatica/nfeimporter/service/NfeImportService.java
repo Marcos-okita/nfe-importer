@@ -36,6 +36,9 @@ public class NfeImportService {
     MercadinhoEnvioService mercadinhoEnvioService;
 
     @Inject
+    ManifestacaoService manifestacaoService;
+
+    @Inject
     NfeConfig config;
 
     @Inject
@@ -84,6 +87,7 @@ public class NfeImportService {
             NfeImportPersistenceService.ResultadoPagina resultadoPagina = persistenceService.persistirPagina(controle.id, resposta);
             totalNovas += resultadoPagina.notasNovas();
             encaminharAoMercadinhoSeHabilitado(resultadoPagina.idsElegiveisMercadinho());
+            enviarManifestacoesSeHabilitado(resultadoPagina.idsManifestacaoPendente());
 
             nsuAtual = resposta.ultNSU();
 
@@ -114,6 +118,17 @@ public class NfeImportService {
             // Best-effort: cada falha ja fica registrada na propria nota (erroEnvioMercadinho) e
             // pode ser reprocessada depois via POST /mercadinho/sincronizar - nao interrompe o loop.
             mercadinhoEnvioService.enviar(notaFiscalId);
+        }
+    }
+
+    private void enviarManifestacoesSeHabilitado(java.util.List<Long> idsManifestacaoPendente) {
+        if (idsManifestacaoPendente.isEmpty() || !config.manifestacao().enviarAutomaticamente()) {
+            return;
+        }
+        for (Long manifestacaoId : idsManifestacaoPendente) {
+            // Best-effort: cada falha fica registrada no proprio controle (manifestacao_destinatario)
+            // e pode ser reprocessada depois via POST /manifestacao/sincronizar - nao interrompe o loop.
+            manifestacaoService.enviar(manifestacaoId);
         }
     }
 }

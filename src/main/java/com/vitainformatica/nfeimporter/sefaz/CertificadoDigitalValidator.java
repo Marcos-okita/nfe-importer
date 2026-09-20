@@ -3,17 +3,14 @@ package com.vitainformatica.nfeimporter.sefaz;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
-import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Signature;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.Enumeration;
 
 import com.vitainformatica.nfeimporter.sefaz.MutualTlsHttpClientFactory.CertificadoDigitalException;
 
@@ -49,31 +46,10 @@ public final class CertificadoDigitalValidator {
      *         certificado estiver fora do periodo de validade
      */
     public static Resultado validar(Path caminhoPfx, char[] senha) {
-        KeyStore keyStore = MutualTlsHttpClientFactory.carregarKeyStore(caminhoPfx, senha);
-        String alias = localizarAliasComChavePrivada(keyStore);
+        CertificadoEntradaLoader.Entrada entrada = CertificadoEntradaLoader.carregar(caminhoPfx, senha);
+        X509Certificate certificado = entrada.certificado();
 
-        PrivateKey chavePrivada;
-        X509Certificate certificado;
-        try {
-            chavePrivada = (PrivateKey) keyStore.getKey(alias, senha);
-            Certificate certificadoBruto = keyStore.getCertificate(alias);
-            if (!(certificadoBruto instanceof X509Certificate x509)) {
-                throw new IllegalStateException("A entrada '" + alias + "' do certificado nao e um certificado X.509");
-            }
-            certificado = x509;
-        } catch (GeneralSecurityException e) {
-            throw new IllegalStateException(
-                    "Nao foi possivel acessar a chave privada do alias '" + alias + "' - a senha do certificado "
-                            + "(nfe.certificado.senha) pode estar incorreta",
-                    e);
-        }
-
-        if (chavePrivada == null) {
-            throw new IllegalStateException(
-                    "O alias '" + alias + "' nao possui chave privada acessivel com a senha informada");
-        }
-
-        if (!assinaturaEhValida(chavePrivada, certificado)) {
+        if (!assinaturaEhValida(entrada.chavePrivada(), certificado)) {
             throw new IllegalStateException(
                     "O par de chaves do certificado nao produziu uma assinatura verificavel - "
                             + "arquivo corrompido ou chave/certificado incompativeis");
@@ -94,7 +70,7 @@ public final class CertificadoDigitalValidator {
         LocalDate validoAte = certificado.getNotAfter().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         long diasParaExpirar = ChronoUnit.DAYS.between(LocalDate.now(), validoAte);
 
-        return new Resultado(alias, certificado.getSubjectX500Principal().getName(), validoAte, diasParaExpirar);
+        return new Resultado(entrada.alias(), certificado.getSubjectX500Principal().getName(), validoAte, diasParaExpirar);
     }
 
     private static boolean assinaturaEhValida(PrivateKey chavePrivada, X509Certificate certificado) {
@@ -121,20 +97,5 @@ public final class CertificadoDigitalValidator {
             case "EC" -> "SHA256withECDSA";
             default -> "SHA256with" + algoritmoChave;
         };
-    }
-
-    private static String localizarAliasComChavePrivada(KeyStore keyStore) {
-        try {
-            Enumeration<String> aliases = keyStore.aliases();
-            while (aliases.hasMoreElements()) {
-                String alias = aliases.nextElement();
-                if (keyStore.isKeyEntry(alias)) {
-                    return alias;
-                }
-            }
-        } catch (GeneralSecurityException e) {
-            throw new IllegalStateException("Falha ao listar as entradas do certificado", e);
-        }
-        throw new IllegalStateException("Nenhuma entrada de chave privada encontrada no arquivo PKCS#12");
     }
 }

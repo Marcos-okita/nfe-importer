@@ -66,6 +66,20 @@ nfe:
     # Timeout da chamada HTTP/SOAP.
     timeout-segundos: 30
 
+  manifestacao:
+    # Endpoints do Ambiente Nacional (AN) para Recepcao de Evento, usados para a Manifestacao do
+    # Destinatario (Ciencia da Operacao). O endpoint de producao foi CONFIRMADO em 2026-09-17
+    # buscando o WSDL real com o certificado (o problema original era a operacao SOAP errada -
+    # "nfeRecepcaoEventoNF", nao "nfeRecepcaoEvento" - ja corrigido no builder). O de homologacao
+    # segue sendo um palpite (mesmo padrao de hostname da SEFAZ) - confirme antes de usar.
+    endpoint-producao: ${NFE_MANIFESTACAO_URL_PROD:https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx}
+    endpoint-homologacao: ${NFE_MANIFESTACAO_URL_HOM:https://hom.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx}
+    timeout-segundos: 30
+    # Se true, registra automaticamente "Ciencia da Operacao" (210210) para cada resumo de NF-e
+    # novo - o unico jeito de a SEFAZ liberar o XML completo (procNFe) numa importacao seguinte.
+    # Nao envolve confirmar/negar a operacao em si (isso fica a cargo de outro sistema/humano).
+    enviar-automaticamente: ${NFE_MANIFESTACAO_ENVIAR_AUTOMATICAMENTE:true}
+
   import:
     # Expressao cron (formato Quarkus/quartz com segundos) de execucao automatica do job de importacao.
     # Padrao: uma vez por hora, aos 5 minutos. A SEFAZ recomenda NAO consultar mais que 1x por hora por CNPJ
@@ -75,7 +89,7 @@ nfe:
     intervalo-minimo-minutos: ${NFE_IMPORT_INTERVALO_MINIMO_MINUTOS:60}
     # Numero maximo de paginas (chamadas consecutivas paginando por NSU) por execucao, para nao prender
     # o job indefinidamente ao importar um backlog grande na primeira execucao.
-    max-paginas-por-execucao: ${NFE_IMPORT_MAX_PAGINAS:1}
+    max-paginas-por-execucao: ${NFE_IMPORT_MAX_PAGINAS:50}
     # Se true, executa uma importacao assim que a aplicacao sobe (alem do agendamento periodico) -
     # evita esperar ate a proxima hora cheia apos um deploy/restart. Continua respeitando o
     # intervalo-minimo-minutos acima, entao reinicios frequentes nao geram consultas excessivas.

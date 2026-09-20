@@ -25,6 +25,8 @@ public interface NfeConfig {
 
     Distribuicao distribuicao();
 
+    Manifestacao manifestacao();
+
     @WithName("import")
     Import import_();
 
@@ -46,6 +48,23 @@ public interface NfeConfig {
         @WithName("timeout-segundos")
         @WithDefault("30")
         int timeoutSegundos();
+    }
+
+    interface Manifestacao {
+        @WithName("endpoint-producao")
+        String endpointProducao();
+
+        @WithName("endpoint-homologacao")
+        String endpointHomologacao();
+
+        @WithName("timeout-segundos")
+        @WithDefault("30")
+        int timeoutSegundos();
+
+        /** Se true, registra automaticamente "Ciencia da Operacao" para cada resumo de NF-e novo. */
+        @WithName("enviar-automaticamente")
+        @WithDefault("true")
+        boolean enviarAutomaticamente();
     }
 
     interface Import {

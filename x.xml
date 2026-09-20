@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <nfeRecepcaoEventoNF xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4">
+      <nfeDadosMsg>
+        <envEvento xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.00">
+          <idLote>1</idLote>
+          <evento versao="1.00">
+            <infEvento Id="ID2102103526093799964200058055001000005421197805764901">
+              <cOrgao>91</cOrgao>
+              <tpAmb>1</tpAmb>
+              <CNPJ>10300984000180</CNPJ>
+              <chNFe>35260937999642000580550010000054211978057649</chNFe>
+              <dhEvento>2026-09-20T11:42:34-03:00</dhEvento>
+              <tpEvento>210210</tpEvento>
+              <nSeqEvento>1</nSeqEvento>
+              <verEvento>1.00</verEvento>
+              <detEvento versao="1.00">
+                <descEvento>Ciencia da Operacao</descEvento>
+              </detEvento>
+            </infEvento>
+            <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+              <SignedInfo>
+                <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
+                <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" />
+                <Reference URI="#ID2102103526093799964200058055001000005421197805764901">
+                  <Transforms>
+                    <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+                    <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
+                  </Transforms>
+                  <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+                  <DigestValue>4ymv0Px5XLEWcnqhvFYwzeFNZ9U=</DigestValue>
+                </Reference>
+              </SignedInfo>
+              <SignatureValue>Z/LdAw/S2vTg9M2qNoFM5mxKKAh/TgYlSxHxx/A9gJFP3HWaMk1j1OqoFWNyEzeZ9BbOCl2Vi3HV
+Uh0hacOFisLipRuY1Ayg+2/lI3gIfoDM1X13avSuzMGNb0XRvxbh5IXJi5U/4aGWihViQg9JQltP
+K/nR96vH98OAAwH5rjwTqVrhGLDhMmNQoMAEtpAuy0/u+0QfPjFfclPKVI1K7gHjLdt2n7Rqgk38
+hLXd9D/JV/BLZt5na9yd7rNLpa6aX1eC8lW1OSfDDwxqKMB4/4+utzHVWfOHgyzV8/DcVhcKjQrL
+y/6Viz0F4GuLbYp5qqjiJcuZ1/ku1Yw5IXv0JQ==</SignatureValue>
+              <KeyInfo>
+                <X509Data>
+                  <X509Certificate>MIIDLTCCAhWgAwIBAgIIMW7dxetA7TswDQYJKoZIhvcNAQELBQAwRTELMAkGA1UEBhMCQlIxGTAX
+BgNVBAoTEFZpdGEgSW5mb3JtYXRpY2ExGzAZBgNVBAMTEk5GZSBJbXBvcnRlciBUZXN0ZTAeFw0y
+NjA5MjAxNDQyMzVaFw0zNjA5MTcxNDQyMzVaMEUxCzAJBgNVBAYTAkJSMRkwFwYDVQQKExBWaXRh
+IEluZm9ybWF0aWNhMRswGQYDVQQDExJORmUgSW1wb3J0ZXIgVGVzdGUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQC4qvA6Bspc1yNwVvLyEPlwkaEmNH1BHsltSJhuVcCSlir/WEHPnvc8
+UWEM4fS3feaRuE5V3x1i6CAkEIOQh6laSfpDPD6RpZk29xy0y2lxv0bCwx9vcaWXEOUS17qcFnCy
+dDDoSHn5moBQ5ON0dZcnn+Q6MyOimmN1TWWiOsRTWgdJOl+3tK/qwy3uHVGy8vCAs5DLPt6grRRP
+zUQZBs/FSSbUn7kOrTD1RMV1sZxPVwOmaxlX1BfOwYMoTuOzTMnltvRYVZn5J4ZWLgRnTuk51JK4
+hK7vyFysUar1E5EsJDXsExWlknEpm1szIOQwSvdLBUe4JlQS309ma6YnS9BhAgMBAAGjITAfMB0G
+A1UdDgQWBBSMYtU3aEuGoUlMXrab29d5HofwhjANBgkqhkiG9w0BAQsFAAOCAQEAT3vC02NBQzHj
+2lMK08Lmyxy66qatKfRX8SyXULaiY6FM2PiDXFPxiRlIIBo96UymGIlLXzJJrLUHxWR5zZ72VgfU
+2bk0y/Nc0h8NuVOI/AZYXmquiRampOqx9/ASca4ZfURX/a/gjdlysn8hEgcyBY6N7YX7TTt2xHKY
+48g/t6RrPiEq/GSsSmdCzT/iyjMYtFWnGoJsK/vRq9vHFveEDadn2/sALDPPYT9wVKybXRMp8dNo
+CzQrXy+Y+bJcsGa7ZOaC74wgbzbwCQxYniXcv8CEIxpGFovqnBQ8lED/3Hb6cPpimQFEvqD1n5V+
+leIz3vo78ozR0tbIt3tBYpVcIQ==</X509Certificate>
+                </X509Data>
+              </KeyInfo>
+            </Signature>
+          </evento>
+        </envEvento>
+      </nfeDadosMsg>
+    </nfeRecepcaoEventoNF>
+  </soap:Body>
+</soap:Envelope>
