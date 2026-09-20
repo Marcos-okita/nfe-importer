@@ -33,11 +33,12 @@ class RecepcaoEventoClientLogicTest {
         String chaveAcesso = "35260937999642000580550010000054211978057649";
         String cnpjAutor = "10300984000180";
         int tpAmb = 1; // producao
+        int cOrgao = 35; // SP - codigo do orgao autorizador (UF do autor do evento), nao Ambiente Nacional
         int nSeqEvento = 1;
 
         // --- Passo 1 (igual ao enviarCienciaOperacao): monta o envEvento sem assinatura ---
         String envEventoXml = ManifestacaoEventoRequestBuilder.cienciaOperacao(
-                tpAmb, chaveAcesso, cnpjAutor, Instant.now(), nSeqEvento);
+                tpAmb, cOrgao, chaveAcesso, cnpjAutor, Instant.now(), nSeqEvento);
         String idEvento = ManifestacaoEventoRequestBuilder.idEvento(chaveAcesso, nSeqEvento);
 
         System.out.println("=== 1) envEvento SEM assinatura ===");
@@ -45,7 +46,7 @@ class RecepcaoEventoClientLogicTest {
         System.out.println();
 
         assertTrue(envEventoXml.contains("<infEvento Id=\"" + idEvento + "\">"), "infEvento deveria estar presente antes de assinar");
-        assertTrue(envEventoXml.contains("<cOrgao>91</cOrgao>"), "campos do infEvento deveriam estar presentes antes de assinar");
+        assertTrue(envEventoXml.contains("<cOrgao>35</cOrgao>"), "campos do infEvento deveriam estar presentes antes de assinar");
         assertTrue(!envEventoXml.contains("<evento versao=\"1.00\"></evento>"), "evento nao deveria estar vazio antes de assinar");
 
         // --- Passo 2 (igual ao enviarCienciaOperacao): carrega certificado e assina ---
@@ -55,7 +56,7 @@ class RecepcaoEventoClientLogicTest {
         CertificadoEntradaLoader.Entrada entrada = CertificadoEntradaLoader.carregarDoKeyStore(keyStore, SENHA);
 
         String envEventoAssinado = XmlAssinaturaService.assinarElementoPorId(
-                envEventoXml, idEvento, entrada.chavePrivada(), entrada.cadeiaCompleta());
+                envEventoXml, idEvento, entrada.chavePrivada(), entrada.certificado());
 
         System.out.println("=== 2) envEvento ASSINADO ===");
         System.out.println(envEventoAssinado);
@@ -65,7 +66,7 @@ class RecepcaoEventoClientLogicTest {
         // depois de assinar?
         assertTrue(envEventoAssinado.contains("<infEvento Id=\"" + idEvento + "\">"),
                 "infEvento NAO deveria sumir apos assinar - se essa asserção falhar, o bug esta em XmlAssinaturaService");
-        assertTrue(envEventoAssinado.contains("<cOrgao>91</cOrgao>"),
+        assertTrue(envEventoAssinado.contains("<cOrgao>35</cOrgao>"),
                 "os campos de dentro do infEvento (cOrgao, tpAmb, CNPJ, chNFe...) NAO deveriam sumir apos assinar");
         assertTrue(envEventoAssinado.contains("<Signature"), "a assinatura deveria ter sido adicionada");
         assertTrue(!envEventoAssinado.contains("<evento versao=\"1.00\"><Signature"),

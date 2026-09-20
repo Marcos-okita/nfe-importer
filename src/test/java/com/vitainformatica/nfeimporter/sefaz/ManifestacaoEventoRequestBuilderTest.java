@@ -21,23 +21,30 @@ class ManifestacaoEventoRequestBuilderTest {
 
     @Test
     void deveMontarEnvEventoDeCienciaDaOperacaoComOsCamposEsperados() {
-        String xml = ManifestacaoEventoRequestBuilder.cienciaOperacao(1, CHAVE, "12345678000199", Instant.now(), 1);
+        String xml = ManifestacaoEventoRequestBuilder.cienciaOperacao(1, 35, CHAVE, "12345678000199", Instant.now(), 1);
 
         assertTrue(xml.contains("<envEvento xmlns=\"http://www.portalfiscal.inf.br/nfe\" versao=\"1.00\">"));
         assertTrue(xml.contains("<idLote>1</idLote>"));
-        assertTrue(xml.contains("<cOrgao>91</cOrgao>"));
+        // cOrgao deve ser o codigo do orgao AUTORIZADOR (UF do autor do evento, ex:
+        // 35=SP) - a
+        // SEFAZ rejeita (cStat 657) um codigo generico de "Ambiente Nacional" (90/91).
+        assertTrue(xml.contains("<cOrgao>35</cOrgao>"));
         assertTrue(xml.contains("<tpAmb>1</tpAmb>"));
         assertTrue(xml.contains("<CNPJ>12345678000199</CNPJ>"));
         assertTrue(xml.contains("<chNFe>" + CHAVE + "</chNFe>"));
         assertTrue(xml.contains("<tpEvento>210210</tpEvento>"));
         assertTrue(xml.contains("<nSeqEvento>1</nSeqEvento>"));
+        // Sem acentuacao - confirmado contra o formulario oficial de Manifestacao do
+        // Destinatario no portal da SEFAZ (dropdown mostra "Ciencia da Operacao", sem
+        // acento).
         assertTrue(xml.contains("<descEvento>Ciencia da Operacao</descEvento>"));
         assertTrue(xml.contains("Id=\"" + ManifestacaoEventoRequestBuilder.idEvento(CHAVE, 1) + "\""));
     }
 
     @Test
     void deveMontarEnvelopeSoap12ComNfeDadosMsgDiretoNoBodySemWrapper() {
-        String envEvento = ManifestacaoEventoRequestBuilder.cienciaOperacao(2, CHAVE, "12345678000199", Instant.now(),
+        String envEvento = ManifestacaoEventoRequestBuilder.cienciaOperacao(2, 35, CHAVE, "12345678000199",
+                Instant.now(),
                 1);
         String envelope = ManifestacaoEventoRequestBuilder.envelopeSoap(envEvento);
 
@@ -45,10 +52,14 @@ class ManifestacaoEventoRequestBuilderTest {
         assertTrue(envelope.contains("soap12:Envelope"));
         assertTrue(envelope.contains("<soap12:Body>"));
 
-        // Estilo "document/literal bare" (confirmado no WSDL real: a wsdl:part referencia
-        // um elemento global via element=, nao type=) - nfeDadosMsg e filho DIRETO do Body,
+        // Estilo "document/literal bare" (confirmado no WSDL real: a wsdl:part
+        // referencia
+        // um elemento global via element=, nao type=) - nfeDadosMsg e filho DIRETO do
+        // Body,
         // sem nenhum wrapper <nfeRecepcaoEventoNF> em volta. Ver comentario no builder.
-        assertTrue(envelope.contains("<soap12:Body><nfeDadosMsg xmlns=\"" + "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4" + "\">"),
+        assertTrue(
+                envelope.contains("<soap12:Body><nfeDadosMsg xmlns=\""
+                        + "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4" + "\">"),
                 "nfeDadosMsg deveria ser filho direto do soap12:Body, sem wrapper nfeRecepcaoEventoNF");
         assertTrue(!envelope.contains("nfeRecepcaoEventoNF"),
                 "nao deveria haver wrapper com o nome da operacao (estilo document/literal bare)");

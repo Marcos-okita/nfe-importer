@@ -47,14 +47,21 @@ class XmlAssinaturaServiceTest {
         CertificadoEntradaLoader.Entrada entrada = CertificadoEntradaLoader.carregarDoKeyStore(keyStore, SENHA);
 
         String idEvento = ManifestacaoEventoRequestBuilder.idEvento(CHAVE_ACESSO, 1);
-        String envEvento = ManifestacaoEventoRequestBuilder.cienciaOperacao(2, CHAVE_ACESSO, "11222333000181", Instant.now(), 1);
+        String envEvento = ManifestacaoEventoRequestBuilder.cienciaOperacao(2, 35, CHAVE_ACESSO, "11222333000181", Instant.now(), 1);
 
         String xmlAssinado = XmlAssinaturaService.assinarElementoPorId(
-                envEvento, idEvento, entrada.chavePrivada(), entrada.cadeiaCompleta());
+                envEvento, idEvento, entrada.chavePrivada(), entrada.certificado());
 
         assertTrue(xmlAssinado.contains("<Signature"), "o XML resultante deveria conter o elemento Signature");
         assertTrue(validarAssinatura(xmlAssinado, idEvento, entrada.certificado()),
                 "a assinatura deveria validar com a chave publica do certificado");
+
+        // Regressao: xmldsig-core-schema_v1.01.xsd (schema oficial da SEFAZ) so permite UM
+        // X509Certificate dentro de X509Data - embutir a cadeia inteira quebra a validacao de
+        // schema (cStat 225), mesmo a assinatura em si sendo criptograficamente valida.
+        int qtdCertificados = xmlAssinado.split("<X509Certificate>", -1).length - 1;
+        assertEquals(1, qtdCertificados,
+                "X509Data deveria conter exatamente um X509Certificate (so o folha) - o schema da SEFAZ nao permite cadeia");
     }
 
     @Test
@@ -66,9 +73,9 @@ class XmlAssinaturaServiceTest {
         CertificadoEntradaLoader.Entrada entrada = CertificadoEntradaLoader.carregarDoKeyStore(keyStore, SENHA);
 
         String idEvento = ManifestacaoEventoRequestBuilder.idEvento(CHAVE_ACESSO, 1);
-        String envEvento = ManifestacaoEventoRequestBuilder.cienciaOperacao(2, CHAVE_ACESSO, "11222333000181", Instant.now(), 1);
+        String envEvento = ManifestacaoEventoRequestBuilder.cienciaOperacao(2, 35, CHAVE_ACESSO, "11222333000181", Instant.now(), 1);
         String xmlAssinado = XmlAssinaturaService.assinarElementoPorId(
-                envEvento, idEvento, entrada.chavePrivada(), entrada.cadeiaCompleta());
+                envEvento, idEvento, entrada.chavePrivada(), entrada.certificado());
 
         // Adultera o conteudo assinado (troca o CNPJ do autor, que nao aparece dentro da chave de
         // acesso nem do atributo Id) sem re-assinar - a validacao deve falhar.

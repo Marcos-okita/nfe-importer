@@ -33,8 +33,10 @@ public class ManifestacaoPersistenceService {
             return;
         }
         m.tentativas++;
-        m.cStat = resposta.cStatEvento();
-        m.xMotivo = resposta.xMotivoEvento();
+        // cStatEfetivo/xMotivoEfetivo cobrem tambem o lote rejeitado antes de processar qualquer
+        // evento (ex: cStat 225 - falha de schema), caso em que cStatEvento/xMotivoEvento vem null.
+        m.cStat = resposta.cStatEfetivo();
+        m.xMotivo = resposta.xMotivoEfetivo();
         if (resposta.sucesso()) {
             m.enviada = true;
             m.dataEnvio = Instant.now();

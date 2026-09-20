@@ -64,6 +64,41 @@ class ManifestacaoResponseParserTest {
         assertEquals(215, resposta.cStatLote());
         assertNull(resposta.cStatEvento());
         assertFalse(resposta.sucesso());
+        // Sem retEvento, cStatEfetivo/xMotivoEfetivo devem cair para os valores do lote -
+        // senao a mensagem reportada ao usuario fica "cStat null: null", sem informacao nenhuma.
+        assertEquals(215, resposta.cStatEfetivo());
+        assertEquals("Rejeicao: Falha no Schema XML", resposta.xMotivoEfetivo());
+    }
+
+    @Test
+    void deveInterpretarExemploRealDeRejeicaoDeSchemaDoLote() {
+        // Resposta real (producao, 2026-09-20) apos corrigir o wrapper document/literal bare:
+        // o servidor agora processa a chamada e rejeita por schema do lote, sem nenhum retEvento.
+        String xmlReal = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                + "<soap:Envelope xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\" "
+                + "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">"
+                + "<soap:Body>"
+                + "<nfeRecepcaoEventoNFResult xmlns=\"http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4\">"
+                + "<retEnvEvento versao=\"1.00\" xmlns=\"http://www.portalfiscal.inf.br/nfe\">"
+                + "<idLote>000000000000000</idLote>"
+                + "<tpAmb>1</tpAmb>"
+                + "<verAplic>AN_1.10.4</verAplic>"
+                + "<cOrgao>91</cOrgao>"
+                + "<cStat>225</cStat>"
+                + "<xMotivo>Rejeicao: Falha no Esquema XML do lote de NF-e</xMotivo>"
+                + "</retEnvEvento>"
+                + "</nfeRecepcaoEventoNFResult>"
+                + "</soap:Body>"
+                + "</soap:Envelope>";
+
+        ManifestacaoResponse resposta = ManifestacaoResponseParser.parse(xmlReal);
+
+        assertEquals(225, resposta.cStatLote());
+        assertEquals("Rejeicao: Falha no Esquema XML do lote de NF-e", resposta.xMotivoLote());
+        assertNull(resposta.cStatEvento());
+        assertFalse(resposta.sucesso());
+        assertEquals(225, resposta.cStatEfetivo());
+        assertEquals("Rejeicao: Falha no Esquema XML do lote de NF-e", resposta.xMotivoEfetivo());
     }
 
     @Test

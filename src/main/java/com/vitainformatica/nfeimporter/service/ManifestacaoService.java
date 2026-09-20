@@ -47,7 +47,10 @@ public class ManifestacaoService {
             ManifestacaoResponse resposta = client.enviarCienciaOperacao(dados.chaveAcesso(), N_SEQ_EVENTO);
             persistenceService.marcarResultado(manifestacaoId, resposta);
 
-            String mensagem = "cStat " + resposta.cStatEvento() + ": " + resposta.xMotivoEvento();
+            // cStatEfetivo/xMotivoEfetivo cobrem tanto o caso normal (evento processado) quanto o
+            // lote rejeitado antes de processar qualquer evento (ex: cStat 225 - falha de schema),
+            // caso em que cStatEvento/xMotivoEvento vem null.
+            String mensagem = "cStat " + resposta.cStatEfetivo() + ": " + resposta.xMotivoEfetivo();
             if (resposta.sucesso()) {
                 Log.infof("Manifestacao (Ciencia da Operacao) registrada para chave %s: %s", dados.chaveAcesso(), mensagem);
             } else {

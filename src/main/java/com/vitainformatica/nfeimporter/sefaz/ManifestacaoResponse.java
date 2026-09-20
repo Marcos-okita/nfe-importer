@@ -10,6 +10,12 @@ package com.vitainformatica.nfeimporter.sefaz;
  *   <li>573 - Duplicidade de Evento (mesmo evento ja havia sido registrado antes - tratamos como
  *       sucesso, pois o efeito desejado - a manifestacao existir - ja esta garantido)</li>
  * </ul>
+ * <p>
+ * O lote pode ser rejeitado ANTES de qualquer evento ser processado (ex: {@code cStat 225} -
+ * "Rejeicao: Falha no Esquema XML do lote de NF-e") - nesse caso a resposta nao traz
+ * {@code retEvento}/{@code infEvento} nenhum, entao {@code cStatEvento}/{@code xMotivoEvento}
+ * ficam {@code null}. Use {@link #cStatEfetivo()}/{@link #xMotivoEfetivo()} para obter o status
+ * relevante em qualquer um dos dois casos, sem precisar checar qual dos dois esta preenchido.
  */
 public record ManifestacaoResponse(
         Integer cStatLote,
@@ -27,5 +33,15 @@ public record ManifestacaoResponse(
 
     public boolean duplicado() {
         return cStatEvento != null && cStatEvento == DUPLICIDADE;
+    }
+
+    /** cStat do evento, se o lote chegou a ser processado; senao, cStat do proprio lote. */
+    public Integer cStatEfetivo() {
+        return cStatEvento != null ? cStatEvento : cStatLote;
+    }
+
+    /** xMotivo do evento, se disponivel; senao, xMotivo do lote. */
+    public String xMotivoEfetivo() {
+        return cStatEvento != null ? xMotivoEvento : xMotivoLote;
     }
 }

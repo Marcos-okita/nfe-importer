@@ -48,13 +48,17 @@ public final class XmlAssinaturaService {
      * exatamente a estrutura {@code <evento><infEvento Id="..."/><Signature/></evento>} exigida
      * pelo schema de eventos da NF-e.
      *
-     * @param cadeiaCertificados cadeia completa do certificado (folha + AC(s) intermediaria(s)),
-     *                           na ordem em que aparecem no .pfx. Embutir so o certificado folha
-     *                           faz alguns validadores do lado do servidor (ao tentar montar a
-     *                           cadeia de confianca) falharem de forma pouco clara.
+     * @param certificado certificado folha (titular) a embutir em {@code KeyInfo/X509Data}.
+     *                    Confirmado contra {@code xmldsig-core-schema_v1.01.xsd} (schema oficial
+     *                    da SEFAZ para assinatura de eventos): {@code X509DataType} so permite UM
+     *                    unico {@code X509Certificate} (sequence sem maxOccurs = exatamente 1) -
+     *                    embutir a cadeia completa (folha + AC intermediaria) quebra a validacao
+     *                    de schema (cStat 225). Chegamos a tentar com a cadeia completa por
+     *                    suspeita de que ajudaria um validador a montar a cadeia de confianca, mas
+     *                    esse nao e o formato aceito por este servico - revertido.
      */
     public static String assinarElementoPorId(String xml, String idAlvo, PrivateKey chavePrivada,
-            List<X509Certificate> cadeiaCertificados) {
+            X509Certificate certificado) {
         try {
             Document doc = parseDocument(xml);
             Element elementoAlvo = marcarAtributoIdComoId(doc, idAlvo);
@@ -75,7 +79,7 @@ public final class XmlAssinaturaService {
                     List.of(referencia));
 
             KeyInfoFactory keyInfoFactory = fabrica.getKeyInfoFactory();
-            X509Data x509Data = keyInfoFactory.newX509Data(cadeiaCertificados);
+            X509Data x509Data = keyInfoFactory.newX509Data(List.of(certificado));
             KeyInfo keyInfo = keyInfoFactory.newKeyInfo(List.of(x509Data));
 
             // Insere o <Signature> como ultimo filho do pai do elemento assinado (= depois de infEvento

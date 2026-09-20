@@ -41,14 +41,17 @@ public class RecepcaoEventoClient {
     public ManifestacaoResponse enviarCienciaOperacao(String chaveAcesso, int nSeqEvento) {
         boolean producao = isProducao();
         int tpAmb = producao ? 1 : 2;
+        // Tipo Código de orgão (UF da tabela do IBGE + 90 SUFRAMA + 91 - RFB
+        int cOrgao = 91; // RFB - codigo do orgao autorizador (UF do autor do evento), nao Ambiente
+                         // Nacional
 
         String envEventoXml = ManifestacaoEventoRequestBuilder.cienciaOperacao(
-                tpAmb, chaveAcesso, config.cnpj(), Instant.now(), nSeqEvento);
+                tpAmb, cOrgao, chaveAcesso, config.cnpj(), Instant.now(), nSeqEvento);
         String idEvento = ManifestacaoEventoRequestBuilder.idEvento(chaveAcesso, nSeqEvento);
 
         CertificadoEntradaLoader.Entrada entrada = certificado();
         String envEventoAssinado = XmlAssinaturaService.assinarElementoPorId(
-                envEventoXml, idEvento, entrada.chavePrivada(), entrada.cadeiaCompleta());
+                envEventoXml, idEvento, entrada.chavePrivada(), entrada.certificado());
 
         String envelopeSoap = ManifestacaoEventoRequestBuilder.envelopeSoap(envEventoAssinado);
         String endpoint = producao ? config.manifestacao().endpointProducao()
@@ -80,7 +83,11 @@ public class RecepcaoEventoClient {
                     .build();
 
             HttpResponse<String> response = httpClient().send(request, HttpResponse.BodyHandlers.ofString());
-
+            System.out.println("HTTP status: " + response.statusCode());
+            System.out.println("Content-Type: " +
+                    response.headers().firstValue("Content-Type").orElse(""));
+            System.out.println("BODY:");
+            System.out.println(response.body());
             if (response.statusCode() / 100 != 2) {
                 throw new SefazComunicacaoException(
                         "SEFAZ retornou HTTP " + response.statusCode() + " ao registrar manifestacao. Corpo: "
