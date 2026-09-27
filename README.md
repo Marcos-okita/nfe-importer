@@ -60,6 +60,7 @@ e é resolvida a partir de variáveis de ambiente:
 
 | Variável de ambiente | Descrição | Padrão |
 |---|---|---|
+| `QUARKUS_HTTP_PORT` | Porta HTTP da aplicação (API REST) | `8087` |
 | `NFE_CNPJ` | CNPJ (só dígitos) do destinatário/titular do certificado | *(obrigatório)* |
 | `NFE_UF` | UF do titular do certificado (ex: `SP`) | *(obrigatório)* |
 | `NFE_AMBIENTE` | `producao` ou `homologacao` | `homologacao` |

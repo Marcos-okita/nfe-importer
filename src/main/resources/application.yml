@@ -2,6 +2,12 @@ quarkus:
   application:
     name: nfe-importer
 
+  http:
+    # Porta 8080 e o padrao do Quarkus, mas colide facilmente com outras coisas na maquina de dev
+    # (inclusive processos internos do proprio VS Code) - usamos 8087 como default proprio,
+    # sobrescrevivel via QUARKUS_HTTP_PORT se precisar.
+    port: ${QUARKUS_HTTP_PORT:8087}
+
   # --- Banco de dados (MariaDB) ---
   # Valores reais (host, credenciais) ficam no .env (nao versionado) - veja .env.example.
   datasource:
