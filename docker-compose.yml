@@ -1,0 +1,26 @@
+# Executa o nfe-importer a partir da imagem gerada por scripts/build-docker.sh.
+#
+# Uso:
+#   ./scripts/build-docker.sh     # gera a imagem
+#   docker compose up -d          # sobe o container
+#   docker compose logs -f        # acompanha os logs
+#
+# Segredos e configuracao vem do .env (fora da imagem). O certificado digital (pasta cert/)
+# e montado somente leitura dentro do container.
+
+services:
+  nfe-importer:
+    image: registry.vitainformatica.com/marcos.okita1/nfe-importer
+    container_name: nfe-importer
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # No .env o caminho e relativo (./cert/...); dentro do container o certificado fica em
+      # /deployments/cert, entao o caminho e sobrescrito aqui.
+      NFE_CERT_PATH: /deployments/cert/${NFE_CERT_FILE:-CLAUDIACRISTIANETORRES10300984000180.pfx}
+      QUARKUS_HTTP_PORT: 8087
+      TZ: America/Sao_Paulo
+    ports:
+      - "8087:8087"
+    volumes:
+      - ./cert:/deployments/cert:ro
